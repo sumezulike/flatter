@@ -39,7 +39,8 @@ jobs:
                 libfplll-dev \
                 libgmp-dev \
                 libmpfr-dev \
-                libomp-dev
+                libomp-dev \
+                libopenblas-dev
 
       - run: cmake .
         env:
