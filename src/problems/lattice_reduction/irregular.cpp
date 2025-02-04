@@ -162,14 +162,8 @@ bool Irregular::solve_triangular() {
     double* profile = new double[n];
     
     assert(M.type() == ElementType::MPZ);
-    double maxv, minv;
     MatrixData<mpz_t> dM = M.data<mpz_t>();
-    maxv = minv = mpz_sizeinbase(dM(0,0),2);
-    profile[0] = maxv;
-    for (unsigned int i = 1; i < n; i++) {
-        unsigned int sz = mpz_sizeinbase(dM(i,i),2);
-        maxv = std::max(maxv, (double)sz);
-        minv = std::min(minv, (double)sz);
+    for (unsigned int i = 0; i < n; i++) {
         long int exp;
         double d = mpz_get_d_2exp(&exp, dM(i,i));
         profile[i] = log2(fabs(d)) + exp;
