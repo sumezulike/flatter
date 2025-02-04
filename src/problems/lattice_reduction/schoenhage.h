@@ -21,7 +21,7 @@ private:
     void nonrecursive(mpz_t& a, mpz_t& b, mpz_t& c, unsigned int m, Matrix U);
     void recursive(mpz_t& a, mpz_t& b, mpz_t& c, unsigned int m, Matrix U);
 
-    void simple_step(mpz_t& a, mpz_t& b, mpz_t& c, unsigned int m, mpz_t& t);
+    void simple_step(mpz_t& a, mpz_t& b, mpz_t& c, unsigned int m, mpz_t& t, bool& is_low_step);
     bool is_minimal(mpz_t& a, mpz_t& b, mpz_t& c, unsigned int m);
 
     bool _is_configured;

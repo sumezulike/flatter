@@ -41,9 +41,10 @@ void Schoenhage::configure(const LatticeReductionParams& p, const ComputationCon
     _is_configured = true;
 }
 
-void Schoenhage::simple_step(mpz_t& a, mpz_t& b, mpz_t& c, unsigned int m, mpz_t& t) {
-    // Do a single step above 2**m. If it's a low step, return t < 0. If it's a high
-    // step, return t > 0.
+void Schoenhage::simple_step(mpz_t& a, mpz_t& b, mpz_t& c, unsigned int m, mpz_t& t, bool& is_low_step) {
+    // Do a single step above 2**m.
+    // According to the paper, t >= 0, but this seems like it is not always the case.
+    // If b < 2 * s, then we need to add to b such that B = b - 2 * a * t >= 2 * s
     mpz_t d, tmp1, tmp2;
     mpz_init(d);
     mpz_init(tmp1);
@@ -57,6 +58,7 @@ void Schoenhage::simple_step(mpz_t& a, mpz_t& b, mpz_t& c, unsigned int m, mpz_t
 
     if (mpz_cmp(a, c) < 0) {
         // Low step
+        is_low_step = true;
         // tmp1 is d + 4as
         mpz_mul_2exp(tmp1, a, m + 2);
         mpz_add(tmp1, tmp1, d);
@@ -96,6 +98,7 @@ void Schoenhage::simple_step(mpz_t& a, mpz_t& b, mpz_t& c, unsigned int m, mpz_t
     } else {
         // High step
         // tmp1 is d + 4cs
+        is_low_step = false;
         mpz_mul_2exp(tmp1, c, m + 2);
         mpz_add(tmp1, tmp1, d);
         // tmp2 is 4s^2
@@ -186,9 +189,13 @@ void Schoenhage::nonrecursive(mpz_t& a, mpz_t& b, mpz_t& c, unsigned int m, Matr
     mpz_init(tmp);
 
     // Do simple steps until t = 0
+    bool is_low_step;
     while(true) {
-        simple_step(a, b, c, m, t);
-        if (mpz_cmp_si(t, 0) < 0) {
+        simple_step(a, b, c, m, t, is_low_step);
+        if (mpz_cmp_si(t, 0) == 0) {
+            // t == 0
+            break;
+        } else if (is_low_step) {
             // low step
             // We must right multiply U by
             // [1 -(-t)]
@@ -198,7 +205,7 @@ void Schoenhage::nonrecursive(mpz_t& a, mpz_t& b, mpz_t& c, unsigned int m, Matr
             mpz_add(U01, U01, tmp);
             mpz_mul(tmp, U10, t);
             mpz_add(U11, U11, tmp);
-        } else if (mpz_cmp_si(t, 0) > 0) {
+        } else {
             // high step
             // We must right multiply U by
             // [1  0]
@@ -207,9 +214,6 @@ void Schoenhage::nonrecursive(mpz_t& a, mpz_t& b, mpz_t& c, unsigned int m, Matr
             mpz_sub(U00, U00, tmp);
             mpz_mul(tmp, U11, t);
             mpz_sub(U10, U10, tmp);
-        } else {
-            // t = 0
-            break;
         }
     }
 
@@ -222,6 +226,7 @@ void Schoenhage::recursive(mpz_t& a, mpz_t& b, mpz_t& c, unsigned int m, Matrix 
     size_t b_len = mpz_sizeinbase(b, 2);
     size_t c_len = mpz_sizeinbase(c, 2);
     unsigned int n = std::max(a_len, std::max(b_len, c_len)) - m;
+    bool is_low_step;
 
     if (n < 200) {
         nonrecursive(a, b, c, m, U);
@@ -299,11 +304,11 @@ void Schoenhage::recursive(mpz_t& a, mpz_t& b, mpz_t& c, unsigned int m, Matrix 
             } else {
                 // One simple step on a, b, c above 2^m'
                 // Update U
-                simple_step(a, b, c, m_prime, t);
+                simple_step(a, b, c, m_prime, t, is_low_step);
                 a_len = mpz_sizeinbase(a, 2);
                 b_len = mpz_sizeinbase(b, 2);
                 c_len = mpz_sizeinbase(c, 2);
-                if (mpz_cmp_si(t, 0) < 0) {
+                if (is_low_step) {
                     // low step
                     // We must right multiply U by
                     // [1 -(-t)]
@@ -313,7 +318,7 @@ void Schoenhage::recursive(mpz_t& a, mpz_t& b, mpz_t& c, unsigned int m, Matrix 
                     mpz_add(U01, U01, tmp1);
                     mpz_mul(tmp1, U10, t);
                     mpz_add(U11, U11, tmp1);
-                } else if (mpz_cmp_si(t, 0) > 0) {
+                } else {
                     // high step
                     // We must right multiply U by
                     // [1  0]
@@ -395,8 +400,11 @@ void Schoenhage::recursive(mpz_t& a, mpz_t& b, mpz_t& c, unsigned int m, Matrix 
 
     // R9
     while (!is_minimal(a, b, c, m)) {
-        simple_step(a, b, c, m, t);
-        if (mpz_cmp_si(t, 0) < 0) {
+        simple_step(a, b, c, m, t, is_low_step);
+        if (mpz_cmp_si(t, 0) == 0) {
+            // t = 0
+            break;
+        } else if (is_low_step) {
             // low step
             // We must right multiply U by
             // [1 -(-t)]
@@ -406,7 +414,7 @@ void Schoenhage::recursive(mpz_t& a, mpz_t& b, mpz_t& c, unsigned int m, Matrix 
             mpz_add(U01, U01, tmp1);
             mpz_mul(tmp1, U10, t);
             mpz_add(U11, U11, tmp1);
-        } else if (mpz_cmp_si(t, 0) > 0) {
+        } else {
             // high step
             // We must right multiply U by
             // [1  0]
@@ -415,9 +423,6 @@ void Schoenhage::recursive(mpz_t& a, mpz_t& b, mpz_t& c, unsigned int m, Matrix 
             mpz_sub(U00, U00, tmp1);
             mpz_mul(tmp1, U11, t);
             mpz_sub(U10, U10, tmp1);
-        } else {
-            // t = 0
-            break;
         }
     }
 
