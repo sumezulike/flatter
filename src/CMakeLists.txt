@@ -13,14 +13,14 @@ find_package(MPFR REQUIRED)
 #target
 set(flatter_PUBLIC_HEADER_INSTALL_DIR include/flatter)
 set(flatter_PUBLIC_HEADER_DIR
-  ${CMAKE_SOURCE_DIR}/include/flatter
+  ${CMAKE_CURRENT_SOURCE_DIR}/../include/flatter
 )
 
 add_library(flatter SHARED "")
 
 target_include_directories(flatter
   PRIVATE
-    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
     ${flatter_PUBLIC_HEADER_DIR}
 )
 

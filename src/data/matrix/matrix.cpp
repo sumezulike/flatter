@@ -17,6 +17,9 @@ Matrix::Matrix(ElementType t, unsigned int m, unsigned int n) :
 
 Matrix::Matrix(ElementType t, unsigned int m, unsigned int n, unsigned int prec) {
     t_ = t;
+    if(prec == 0) {
+        prec = 1;
+    }
     if (t == ElementType::MPFR) {
         WorkspaceBuffer<mpfr_t>* wsb = new WorkspaceBuffer<mpfr_t>(m*n, prec);
         MatrixData<mpfr_t> md (wsb->walloc(m*n), m, n);
